@@ -1,6 +1,8 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/base-debian:trixie
 ARG BUILD_ARCH
 
+ARG CHIP_VERSION=v1.6.0.0
+
 FROM $BUILD_FROM AS builder-base
 
 # hadolint ignore=DL3009
@@ -67,7 +69,7 @@ RUN \
 # Use amd64 stage to generate ZAP files (zap-cli is only available for amd64)
 FROM --platform=linux/amd64 debian:trixie AS builder-amd64-base
 
-ARG CHIP_VERSION=v1.6.0.0
+ARG CHIP_VERSION
 
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -92,9 +94,6 @@ FROM $BUILD_FROM
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ARG BUILD_ARCH
-ARG CHIP_VERSION=v1.4.2.0
-
 RUN \
     set -x \
     && apt-get update \
@@ -115,6 +114,9 @@ RUN \
 
 COPY --from=builder-ttyd /usr/src/libwebsockets/build/install /
 COPY --from=builder-ttyd /usr/src/ttyd/build/install /
+
+ARG BUILD_ARCH
+ARG CHIP_VERSION
 
 RUN \
     set -x \
