@@ -71,7 +71,7 @@ RUN \
             exit 1; \
        fi \
     && export API_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/tags/${CHIP_VERSION}" \
-    && curl -s $API_URL | \
+    && curl -s "$API_URL" | \
        jq -r --arg suffix "-${EXAMPLE_ARCH}" '.assets[] | select(.name | endswith($suffix)) | .browser_download_url, (.name | rtrimstr($suffix))' | \
        while read -r url; read -r name; do \
          echo "Downloading $url..."; \
