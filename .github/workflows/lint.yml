@@ -1,7 +1,6 @@
 name: Lint
 
 env:
-  HADOLINT_VERSION: v1.17.2
   SHELLCHECK_OPTS: -e SC1008 -s bash
 
 on:
@@ -24,15 +23,10 @@ jobs:
           persist-credentials: false
 
       - name: Run linter
-        id: changed_files
-        run: |
-          shopt -s globstar
-          for dockerfile in **/Dockerfile; do
-            echo "Linting: $dockerfile"
-            docker run --rm -i \
-              -v $(pwd)/.hadolint.yaml:/.hadolint.yaml:ro \
-              hadolint/hadolint:${{ env.HADOLINT_VERSION }} < "$dockerfile"
-          done
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          config: .hadolint.yaml
+          recursive: true
   jq:
     runs-on: ubuntu-latest
     name: JQ
