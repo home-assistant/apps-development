@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Use Alpine distribution packages for ttyd and libwebsockets
+
 ## 0.2.0
 
 - Update Alpine to 3.24
