@@ -33,11 +33,11 @@ RUN \
 
 FROM builder-base AS builder-ttyd
 
-ARG LIBWEBSOCKETS_VERSION=4.3.5
-ARG TTYD_VERSION=1.7.3
+ARG TTYD_VERSION=1.7.7
 
 RUN \
     set -x \
+    && apt-get update \
     && apt-get install -y --no-install-recommends \
        cmake \
        libuv1-dev \
@@ -45,27 +45,9 @@ RUN \
        libssl-dev \
        zlib1g-dev \
        libjson-c-dev \
-    && git clone --branch "v${LIBWEBSOCKETS_VERSION}" --depth=1 \
-        https://github.com/warmcat/libwebsockets \
-    && cd libwebsockets \
-    && mkdir -p build \
-    && cd build \
-    && cmake .. \
-        -DCMAKE_BUILD_TYPE=MinSizeRel \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DCMAKE_VERBOSE_MAKEFILE=TRUE \
-        -DLWS_IPV6=ON \
-        -DLWS_STATIC_PIC=ON \
-        -DLWS_UNIX_SOCK=ON \
-        -DLWS_WITH_LIBUV=ON \
-        -DLWS_WITH_SHARED=ON \
-        -DLWS_WITHOUT_TESTAPPS=ON \
-    && make \
-    && make install \
-    && make DESTDIR=./install install
-
-RUN \
-    cd /usr/src \
+       libwebsockets-dev \
+       libwebsockets-evlib-uv \
+    && cd /usr/src \
     && git clone --branch main --single-branch \
         https://github.com/tsl0922/ttyd \
     && cd ttyd \
@@ -82,13 +64,11 @@ RUN \
 
 FROM $BUILD_FROM
 
-ARG HOME_ASSISTANT_CHIP_VERSION=2023.5.2
-
 RUN \
     set -x \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-       libuv1 \
+       libwebsockets-evlib-uv \
        openssl \
        zlib1g \
        libjson-c5 \
@@ -113,21 +93,18 @@ RUN \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/src/*
 
-COPY --from=builder-ttyd /usr/src/libwebsockets/build/install /
 COPY --from=builder-ttyd /usr/src/ttyd/build/install /
-
-RUN ldconfig
 
 WORKDIR /root
 
-COPY --from=builder-python-dbus-wheel /usr/src/dbus_python-1.2.18-*.whl /root
-COPY --from=builder-python-dbus-wheel /usr/src/psutil-5.9.5-*.whl /root
+ARG HOME_ASSISTANT_CHIP_VERSION=2023.5.2
 
 # hadolint ignore=DL3013
 RUN \
+    --mount=type=bind,from=builder-python-dbus-wheel,source=/usr/src,target=/tmp/wheels \
     pip3 install --no-cache-dir --break-system-packages \
-       dbus_python-1.2.18-*.whl \
-       psutil-5.9.5-*.whl \
+       /tmp/wheels/dbus_python-1.2.18-*.whl \
+       /tmp/wheels/psutil-5.9.5-*.whl \
     && pip3 install --no-cache-dir --break-system-packages \
        home-assistant-chip-clusters==${HOME_ASSISTANT_CHIP_VERSION} \
        home-assistant-chip-core==${HOME_ASSISTANT_CHIP_VERSION} \

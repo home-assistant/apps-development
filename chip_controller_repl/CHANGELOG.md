@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2
+
+- Use Debian package for libwebsockets
+- Bump ttyd to 1.7.7
+
 ## 0.4.1
 
 - Update base image to Trixie
