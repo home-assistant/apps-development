@@ -125,10 +125,10 @@ COPY --from=builder-python-dbus-wheel /usr/src/psutil-5.9.5-*.whl /root
 
 # hadolint ignore=DL3013
 RUN \
-    pip3 install --break-system-packages \
+    pip3 install --no-cache-dir --break-system-packages \
        dbus_python-1.2.18-*.whl \
        psutil-5.9.5-*.whl \
-    && pip3 install --break-system-packages \
+    && pip3 install --no-cache-dir --break-system-packages \
        home-assistant-chip-clusters==${HOME_ASSISTANT_CHIP_VERSION} \
        home-assistant-chip-core==${HOME_ASSISTANT_CHIP_VERSION} \
        home-assistant-chip-repl==${HOME_ASSISTANT_CHIP_VERSION} \
