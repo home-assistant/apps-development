@@ -3,56 +3,30 @@ ARG BUILD_ARCH
 
 ARG CHIP_VERSION=v1.6.0.0
 
-FROM $BUILD_FROM AS builder-base
+# Build ttyd
 
-# hadolint ignore=DL3009
-RUN \
-    set -x \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-       git \
-       patch \
-       gcc g++ \
-       make \
-       pkg-config
+FROM $BUILD_FROM AS builder-ttyd
 
-FROM builder-base AS builder-ttyd
-
-ARG LIBWEBSOCKETS_VERSION=4.3.5
 ARG TTYD_VERSION=1.7.7
 
 WORKDIR /usr/src
 
 RUN \
     set -x \
+    && apt-get update \
     && apt-get install -y --no-install-recommends \
+       git \
+       gcc g++ \
+       make \
        cmake \
+       pkg-config \
        libuv1-dev \
        libc-dev \
        libssl-dev \
        zlib1g-dev \
        libjson-c-dev \
-    && git clone --branch "v${LIBWEBSOCKETS_VERSION}" --depth=1 \
-        https://github.com/warmcat/libwebsockets \
-    && cd libwebsockets \
-    && mkdir -p build \
-    && cd build \
-    && cmake .. \
-        -DCMAKE_BUILD_TYPE=MinSizeRel \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DCMAKE_VERBOSE_MAKEFILE=TRUE \
-        -DLWS_IPV6=ON \
-        -DLWS_STATIC_PIC=ON \
-        -DLWS_UNIX_SOCK=ON \
-        -DLWS_WITH_LIBUV=ON \
-        -DLWS_WITH_SHARED=ON \
-        -DLWS_WITHOUT_TESTAPPS=ON \
-    && make \
-    && make install \
-    && make DESTDIR=./install install
-
-RUN \
-    cd /usr/src \
+       libwebsockets-dev \
+       libwebsockets-evlib-uv \
     && git clone --branch main --single-branch \
         https://github.com/tsl0922/ttyd \
     && cd ttyd \
@@ -66,57 +40,24 @@ RUN \
     && make \
     && make DESTDIR=./install install
 
-# Use amd64 stage to generate ZAP files (zap-cli is only available for amd64)
-FROM --platform=linux/amd64 debian:trixie AS builder-amd64-base
+# Download example apps and credentials
 
-ARG CHIP_VERSION
-
-# Set shell
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-WORKDIR /usr/src
-
-RUN \
-    set -x \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-       git \
-       ca-certificates \
-       python3 \
-    && git clone --depth 1 --no-single-branch -b master \
-       https://github.com/project-chip/connectedhomeip \
-    && cd connectedhomeip \
-    && git fetch origin ${CHIP_VERSION} \
-    && git checkout ${CHIP_VERSION}
-
-FROM $BUILD_FROM
-
-# Set shell
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-RUN \
-    set -x \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-       libuv1 \
-       openssl \
-       zlib1g \
-       libjson-c5 \
-       libdbus-1-3 \
-       libglib2.0 \
-       libnl-3-200 \
-       libnl-route-3-200 \
-       tmux \
-       curl \
-       jq \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /usr/src/*
-
-COPY --from=builder-ttyd /usr/src/libwebsockets/build/install /
-COPY --from=builder-ttyd /usr/src/ttyd/build/install /
+FROM $BUILD_FROM AS builder-downloads
 
 ARG BUILD_ARCH
 ARG CHIP_VERSION
+
+# Set shell
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ADD https://github.com/project-chip/connectedhomeip/archive/${CHIP_VERSION}.tar.gz /tmp/chip.tar.gz
+
+RUN \
+    mkdir /credentials \
+    && tar -xzf /tmp/chip.tar.gz --strip-components=2 --directory=/credentials --wildcards '*/credentials/*' \
+    && rm /tmp/chip.tar.gz
+
+WORKDIR /examples
 
 RUN \
     set -x \
@@ -134,14 +75,37 @@ RUN \
        jq -r --arg suffix "-${EXAMPLE_ARCH}" '.assets[] | select(.name | endswith($suffix)) | .browser_download_url, (.name | rtrimstr($suffix))' | \
        while read -r url; read -r name; do \
          echo "Downloading $url..."; \
-         curl -Lo "/usr/local/bin/$name" "$url"; \
-         chmod +x "/usr/local/bin/$name"; \
+         curl -Lo "$name" "$url"; \
+         chmod +x "$name"; \
        done
 
-RUN ldconfig
+# Build final image
+
+FROM $BUILD_FROM
+
+# Set shell
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN \
+    set -x \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+       libwebsockets-evlib-uv \
+       openssl \
+       zlib1g \
+       libjson-c5 \
+       libdbus-1-3 \
+       libglib2.0 \
+       libnl-3-200 \
+       libnl-route-3-200 \
+       tmux \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/src/*
+
+COPY --from=builder-ttyd /usr/src/ttyd/build/install /
+COPY --from=builder-downloads /examples/ /usr/local/bin/
+COPY --from=builder-downloads /credentials /root/credentials
 
 WORKDIR /root
-
-COPY --from=builder-amd64-base /usr/src/connectedhomeip/credentials /root/credentials
 
 COPY rootfs /

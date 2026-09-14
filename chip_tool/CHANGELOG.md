@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1
+
+- Use Debian package for libwebsockets
+- Simplify app build
+
 ## 0.6.0
 
 - Bump to CHIP version/Matter SDK v1.6.0.0
