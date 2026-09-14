@@ -95,6 +95,7 @@ RUN \
        zlib1g \
        libjson-c5 \
        libdbus-1-3 \
+       libevent-pthreads-2.1-7t64 \
        libglib2.0 \
        libnl-3-200 \
        libnl-route-3-200 \

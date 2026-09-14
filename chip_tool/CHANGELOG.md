@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.2
+
+- Fix missing libevent-pthreads runtime library preventing chip-tool from starting
+
 ## 0.6.1
 
 - Use Debian package for libwebsockets
