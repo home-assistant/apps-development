@@ -1,0 +1,116 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+
+  "enabledManagers": ["custom.regex", "github-actions"],
+
+  "minimumReleaseAge": "7 days",
+  "schedule": ["before 8am on monday"],
+
+  "semanticCommits": "disabled",
+  "labels": ["dependencies", "github_actions"],
+
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "aiohttp in the api_explorer app",
+      "managerFilePatterns": ["/^api_explorer/Dockerfile$/"],
+      "matchStrings": ["aiohttp==(?<currentValue>[^\\s\\\\]+)"],
+      "depNameTemplate": "aiohttp",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "description": "dbus-python in the chip_controller_repl app",
+      "managerFilePatterns": ["/^chip_controller_repl/Dockerfile$/"],
+      "matchStrings": ["dbus-python==(?<currentValue>[^\\s\\\\]+)"],
+      "depNameTemplate": "dbus-python",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "description": "psutil in the chip_controller_repl app",
+      "managerFilePatterns": ["/^chip_controller_repl/Dockerfile$/"],
+      "matchStrings": ["psutil==(?<currentValue>[^\\s\\\\]+)"],
+      "depNameTemplate": "psutil",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "description": "home-assistant-chip-core in the chip_controller_repl app",
+      "managerFilePatterns": ["/^chip_controller_repl/Dockerfile$/"],
+      "matchStrings": ["ARG HOME_ASSISTANT_CHIP_VERSION=(?<currentValue>\\S+)"],
+      "depNameTemplate": "home-assistant-chip-core",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "description": "ttyd in the Matter apps",
+      "managerFilePatterns": [
+        "/^(chip_controller_repl|chip_tool)/Dockerfile$/"
+      ],
+      "matchStrings": ["ARG TTYD_VERSION=(?<currentValue>\\S+)"],
+      "depNameTemplate": "tsl0922/ttyd",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "project-chip/connectedhomeip in the chip_tool app",
+      "managerFilePatterns": ["/^chip_tool/Dockerfile$/"],
+      "matchStrings": ["ARG CHIP_VERSION=(?<currentValue>\\S+)"],
+      "depNameTemplate": "project-chip/connectedhomeip",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "zwave-js in the zwave_mock_server app",
+      "managerFilePatterns": ["/^zwave_mock_server/Dockerfile$/"],
+      "matchStrings": ["ARG ZWAVEJS_VERSION=(?<currentValue>\\S+)"],
+      "depNameTemplate": "zwave-js",
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": "@zwave-js/server in the zwave_mock_server app",
+      "managerFilePatterns": ["/^zwave_mock_server/Dockerfile$/"],
+      "matchStrings": ["ARG ZWAVEJS_SERVER_VERSION=(?<currentValue>\\S+)"],
+      "depNameTemplate": "@zwave-js/server",
+      "datasourceTemplate": "npm"
+    }
+  ],
+
+  "packageRules": [
+    {
+      "description": "One PR per app with all its updates, as each one needs a version bump and changelog entry anyway",
+      "matchManagers": ["custom.regex"],
+      "groupName": "{{parentDir}}",
+      "groupSlug": "app-{{parentDir}}",
+      "commitMessagePrefix": "{{parentDir}}:",
+      "minimumReleaseAge": "3 days",
+      "schedule": ["before 8am on monday"],
+      "prBodyNotes": [
+        "Before merging, bump `version` in `{{parentDir}}/config.yaml` and add a matching entry to its `CHANGELOG.md`, if it has one."
+      ]
+    },
+    {
+      "description": "Leave runner labels and action version inputs alone, Dependabot never updated those",
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["github-runner", "uses-with"],
+      "enabled": false
+    },
+    {
+      "description": "Our own actions that follow a branch (like home-assistant/actions@master) float on purpose. Pinning them would open a digest PR in every repository for each change to them. Our own actions on a version tag are pinned like any other.",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["home-assistant/**"],
+      "matchCurrentValue": "/^(dev|main|master)$/",
+      "pinDigests": false
+    },
+    {
+      "description": "Group the home-assistant/builder subactions into one PR (they share a release)",
+      "matchPackageNames": ["/^home-assistant\\/builder(?:\\/|$)/"],
+      "groupName": "home-assistant/builder",
+      "groupSlug": "builder"
+    }
+  ]
+}
