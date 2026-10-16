@@ -2,7 +2,7 @@ name: Remote API proxy
 version: 1.4.0
 slug: remote_api
 description: Remote API proxy for Home Assistant
-url: https://developers.home-assistant.io/docs/supervisor/development/#supervisor-api-access
+url: https://contributors.home-assistant.io/os/supervisor/core-connection/#get-access-to-the-supervisor-api
 arch:
 - aarch64
 - amd64
