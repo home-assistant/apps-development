@@ -1,12 +1,14 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/base-debian:trixie
 ARG BUILD_ARCH
 
+# Renovate updates this version (rule in .github/renovate.json)
 ARG CHIP_VERSION=v1.6.0.0
 
 # Build ttyd
 
 FROM $BUILD_FROM AS builder-ttyd
 
+# Renovate updates this version (rule in .github/renovate.json)
 ARG TTYD_VERSION=1.7.7
 
 WORKDIR /usr/src

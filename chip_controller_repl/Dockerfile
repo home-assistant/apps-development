@@ -17,6 +17,7 @@ WORKDIR /usr/src
 
 FROM builder-base AS builder-python-dbus-wheel
 
+# Renovate updates the dbus-python and psutil versions (rules in .github/renovate.json)
 RUN \
     set -x \
     && apt-get update \
@@ -33,6 +34,7 @@ RUN \
 
 FROM builder-base AS builder-ttyd
 
+# Renovate updates this version (rule in .github/renovate.json)
 ARG TTYD_VERSION=1.7.7
 
 RUN \
@@ -97,6 +99,7 @@ COPY --from=builder-ttyd /usr/src/ttyd/build/install /
 
 WORKDIR /root
 
+# Renovate updates this version (rule in .github/renovate.json)
 ARG HOME_ASSISTANT_CHIP_VERSION=2023.5.2
 
 # hadolint ignore=DL3013
