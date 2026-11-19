@@ -1,6 +1,7 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/base:3.24
 FROM $BUILD_FROM
 
+# Renovate updates these versions (rules in .github/renovate.json)
 ARG ZWAVEJS_SERVER_VERSION=3.1.0
 ARG ZWAVEJS_VERSION=15.3.0
 
